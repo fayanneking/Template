@@ -20,36 +20,20 @@ public class Template {
 	
 	public String evaluate() {
 		TemplateParse parser = new TemplateParse();
-		List<String> segments = parser.parse(templateText);
+		List<Segment> segments = parser.parseSegments(templateText);
 		return concatenate(segments);
 	}
 	
-	public String concatenate(List<String> segments){
+	private String concatenate(List<Segment> segments){
 		StringBuilder result = new StringBuilder();
-		for (String segment : segments) {
-			append(segment, result);
+		for (Segment segment : segments) {
+			result.append(segment.evaluate(variables));
 		}
 		return result.toString();
 	}
-	
-	private void append(String segment, StringBuilder result) {
-		if(isVariable(segment)) {
-			evaluateVariable(segment, result);
-		} else {
-			result.append(segment);
-		}
-	}
 
-	private boolean isVariable(String segment) {
+	public static boolean isVariable(String segment) {
 		return segment.startsWith("${") && segment.endsWith("}");
-	}
-
-	private void evaluateVariable(String segment, StringBuilder result) {
-		String var = segment.substring(2, segment.length() - 1);
-		if(!variables.containsKey(var)) {
-			throw new MissingValueException("No value for " + segment);
-		}
-		result.append(variables.get(var));
 	}
 
 }
