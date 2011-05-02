@@ -1,10 +1,8 @@
 package com.orangeandbronze.template;
 
-import java.util.Map;
 import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.Map;
 
 public class Template {
 	
@@ -21,24 +19,37 @@ public class Template {
 	}
 	
 	public String evaluate() {
-		String result = replaceVariables();
-		checkForMissingValues(result);
-		return result;
+		TemplateParse parser = new TemplateParse();
+		List<String> segments = parser.parse(templateText);
+		return concatenate(segments);
+	}
+	
+	public String concatenate(List<String> segments){
+		StringBuilder result = new StringBuilder();
+		for (String segment : segments) {
+			append(segment, result);
+		}
+		return result.toString();
+	}
+	
+	private void append(String segment, StringBuilder result) {
+		if(isVariable(segment)) {
+			evaluateVariable(segment, result);
+		} else {
+			result.append(segment);
+		}
 	}
 
-	private String replaceVariables() {
-		String result = templateText;
-		for(Entry<String, String> entry: variables.entrySet()){
-			String regex = "\\$\\{" + entry.getKey() + "\\}";
-			result = result.replaceAll(regex, entry.getValue());
-		}
-		return result;
+	private boolean isVariable(String segment) {
+		return segment.startsWith("${") && segment.endsWith("}");
 	}
 
-	private void checkForMissingValues(String result) {
-		Matcher m = Pattern.compile(".*\\$\\{.+\\}").matcher(result);
-		if(m.find()) {
-			throw new MissingValueException("No value for " + m.group());
+	private void evaluateVariable(String segment, StringBuilder result) {
+		String var = segment.substring(2, segment.length() - 1);
+		if(!variables.containsKey(var)) {
+			throw new MissingValueException("No value for " + segment);
 		}
+		result.append(variables.get(var));
 	}
+
 }
